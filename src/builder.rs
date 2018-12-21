@@ -86,7 +86,7 @@ impl Builder {
     pub fn build_call_pointer(&self, function_pointer: PointerValue, args: &[BasicValueEnum], name: &str) -> CallSiteValue {
         // LLVM gets upset when void return calls are named because they don't return anything
         let name = unsafe {
-            match LLVMGetTypeKind(LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(function.as_value_ref())))) {
+            match LLVMGetTypeKind(LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(function_pointer.as_value_ref())))) {
                 LLVMTypeKind::LLVMVoidTypeKind => "",
                 _ => name,
             }
