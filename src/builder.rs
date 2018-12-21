@@ -83,6 +83,26 @@ impl Builder {
         CallSiteValue::new(value)
     }
 
+    pub fn build_call_pointer(&self, function_pointer: PointerValue, args: &[BasicValueEnum], name: &str) -> CallSiteValue {
+        // LLVM gets upset when void return calls are named because they don't return anything
+        let name = unsafe {
+            match LLVMGetTypeKind(LLVMGetReturnType(LLVMGetElementType(LLVMTypeOf(function.as_value_ref())))) {
+                LLVMTypeKind::LLVMVoidTypeKind => "",
+                _ => name,
+            }
+        };
+
+        let c_string = CString::new(name).expect("Conversion to CString failed unexpectedly");
+        let mut args: Vec<LLVMValueRef> = args.iter()
+                                              .map(|val| val.as_value_ref())
+                                              .collect();
+        let value = unsafe {
+            LLVMBuildCall(self.builder, function_pointer.as_value_ref(), args.as_mut_ptr(), args.len() as u32, c_string.as_ptr())
+        };
+
+        CallSiteValue::new(value)
+    }
+
     // REVIEW: Doesn't GEP work on array too?
     /// GEP is very likely to segfault if indexes are used incorrectly, and is therefore an unsafe function. Maybe we can change this in the future.
     pub unsafe fn build_gep(&self, ptr: PointerValue, ordered_indexes: &[IntValue], name: &str) -> PointerValue {
